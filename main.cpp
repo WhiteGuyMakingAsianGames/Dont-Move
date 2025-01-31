@@ -1,90 +1,69 @@
-#include <SFML/Graphics.hpp>
-#include <Box2D/Box2D.h>
+#include <iostream>
 #include <vector>
+#include <cstdlib>
+#include <ctime>
+
+const int WIDTH = 800;
+const int HEIGHT = 600;
 
 class Player {
 public:
-    Player(b2World& world) {
-        b2BodyDef bodyDef;
-        bodyDef.type = b2_dynamicBody;
-        bodyDef.position.Set(400.0f, 300.0f);
-        body = world.CreateBody(&bodyDef);
+    Player(int x, int y) : x(x), y(y) {}
 
-        b2PolygonShape dynamicBox;
-        dynamicBox.SetAsBox(10.0f, 10.0f);
-
-        b2FixtureDef fixtureDef;
-        fixtureDef.shape = &dynamicBox;
-        fixtureDef.density = 1.0f;
-        fixtureDef.friction = 0.3f;
-
-        body->CreateFixture(&fixtureDef);
+    void draw() const {
+        std::cout << "Player at (" << x << ", " << y << ")\n";
     }
 
-    void draw(sf::RenderWindow& window) {
-        sf::RectangleShape shape(sf::Vector2f(20.0f, 20.0f));
-        shape.setFillColor(sf::Color::Green);
-        shape.setOrigin(10.0f, 10.0f);
-        shape.setPosition(body->GetPosition().x, body->GetPosition().y);
-        window.draw(shape);
-    }
+    int getX() const { return x; }
+    int getY() const { return y; }
 
 private:
-    b2Body* body;
+    int x, y;
 };
 
 class Obstacle {
 public:
-    Obstacle(b2World& world, float x, float y) {
-        b2BodyDef bodyDef;
-        bodyDef.type = b2_staticBody;
-        bodyDef.position.Set(x, y);
-        body = world.CreateBody(&bodyDef);
+    Obstacle(int x, int y) : x(x), y(y) {}
 
-        b2PolygonShape staticBox;
-        staticBox.SetAsBox(20.0f, 20.0f);
-
-        body->CreateFixture(&staticBox, 0.0f);
+    void draw() const {
+        std::cout << "Obstacle at (" << x << ", " << y << ")\n";
     }
 
-    void draw(sf::RenderWindow& window) {
-        sf::RectangleShape shape(sf::Vector2f(40.0f, 40.0f));
-        shape.setFillColor(sf::Color::Red);
-        shape.setOrigin(20.0f, 20.0f);
-        shape.setPosition(body->GetPosition().x, body->GetPosition().y);
-        window.draw(shape);
-    }
+    int getX() const { return x; }
+    int getY() const { return y; }
 
 private:
-    b2Body* body;
+    int x, y;
 };
 
+void draw(const Player& player, const std::vector<Obstacle>& obstacles) {
+    player.draw();
+    for (const auto& obstacle : obstacles) {
+        obstacle.draw();
+    }
+}
+
 int main() {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Don't Move");
-    b2Vec2 gravity(0.0f, -9.8f);
-    b2World world(gravity);
+    std::srand(std::time(nullptr));
 
-    Player player(world);
+    Player player(WIDTH / 2, HEIGHT / 2);
     std::vector<Obstacle> obstacles;
-    obstacles.emplace_back(world, 200.0f, 300.0f);
-    obstacles.emplace_back(world, 600.0f, 300.0f);
+    for (int i = 0; i < 5; ++i) {
+        obstacles.emplace_back(std::rand() % WIDTH, std::rand() % HEIGHT);
+    }
 
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
+    bool running = true;
+    while (running) {
+        // Game logic and rendering
+        draw(player, obstacles);
+
+        // Simulate game loop delay
+        std::cout << "Press Enter to continue or 'q' to quit: ";
+        char input;
+        std::cin.get(input);
+        if (input == 'q') {
+            running = false;
         }
-
-        window.clear();
-        world.Step(1.0f / 60.0f, 6, 2);
-
-        player.draw(window);
-        for (auto& obstacle : obstacles) {
-            obstacle.draw(window);
-        }
-
-        window.display();
     }
 
     return 0;
